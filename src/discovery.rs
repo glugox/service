@@ -18,6 +18,7 @@ pub async fn send_registration( name: String, url: String, active: bool ) -> Res
             .await?;
 
         println!("{:#?}", service);
+
         Ok(())
 }
 
