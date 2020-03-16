@@ -1,33 +1,21 @@
 use rocket::State;
 use rocket_contrib::json::{Json, JsonValue};
-use serde::Deserialize;
 use validator::Validate;
 
 use crate::auth::{ApiKey, Auth};
 use crate::config::AppState;
 use crate::db::{self, services::ServiceCreationError};
 use crate::errors::{Errors, FieldValidator};
+use crate::models::service::{UpdateService, NewServiceData};
 
-#[derive(Deserialize)]
-pub struct NewService {
-    service: NewServiceData,
-}
-
-#[derive(Deserialize, Validate)]
-struct NewServiceData {
-    #[validate(length(min = 1))]
-    name: String,
-    url: String,
-    active: Option<bool>,
-}
 
 #[post("/", format = "json", data = "<new_service>")]
 pub fn post_service(
-    new_service: Json<NewService>,
+    new_service: Json<NewServiceData>,
     conn: db::Conn,
     state: State<AppState>,
 ) -> Result<JsonValue, Errors> {
-    let new_service = new_service.into_inner().service;
+    let new_service = new_service.into_inner();
 
     let mut extractor = FieldValidator::validate(&new_service);
     let name = new_service.name;
@@ -36,7 +24,7 @@ pub fn post_service(
 
     extractor.check()?;
 
-    db::services::create(&conn, &name, &url, active.unwrap_or(false))
+    db::services::create(&conn, name.clone(), url.clone(), active)
         .map(|service| json!({ "service": service.before_insert() }))
         .map_err(|error| {
             let field = match error {
@@ -56,10 +44,6 @@ pub fn get_service(_key: ApiKey, id: i32, conn: db::Conn) -> Option<JsonValue> {
     db::services::find_one(&conn, id).map(|service| json!({ "service": service }))
 }
 
-#[derive(Deserialize)]
-pub struct UpdateService {
-    service: db::services::UpdateServiceData,
-}
 
 #[put("/", format = "json", data = "<service>")]
 pub fn put_service(

@@ -6,6 +6,4 @@ fn main() {
     service::load_env(None);
     service::rocket().launch();
 
-
-
 }

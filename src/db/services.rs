@@ -8,13 +8,6 @@ use diesel::prelude::*;
 use diesel::result::{DatabaseErrorKind, Error};
 use serde::Deserialize;
 
-#[derive(Insertable)]
-#[table_name = "services"]
-pub struct NewService<'a> {
-    pub name: &'a str,
-    pub url: &'a str,
-    pub active: bool,
-}
 
 pub enum ServiceCreationError {
     DuplicatedServiceName,
@@ -34,12 +27,12 @@ impl From<Error> for ServiceCreationError {
 
 pub fn create(
     conn: &Conn,
-    name: &str,
-    url: &str,
-    active: bool,
+    name: String,
+    url: String,
+    active: Option<bool>,
 ) -> Result<Service, ServiceCreationError> {
 
-    let new_service = &NewService {
+    let new_service = &NewServiceData {
         name,
         url,
         active
